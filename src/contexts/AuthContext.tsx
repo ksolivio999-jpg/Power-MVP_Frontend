@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { authStorage } from '@/lib/auth';
-import { api } from '@/lib/api';
+import { authApi } from '@/lib/api';
 import type { User, LoginCredentials, RegisterData, AuthResponse } from '@/types/auth';
 
 interface AuthContextType {
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token) {
         try {
           // Fetch current user from API
-          const userData = await api.get<User>('/auth/me');
+          const userData = await authApi.me();
           setUser(userData);
         } catch (error) {
           console.error('Failed to fetch user:', error);
@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: LoginCredentials) => {
     try {
-      const response = await api.post<AuthResponse>('/auth/login', credentials);
+      const response = await authApi.login(credentials);
       authStorage.setToken(response.token);
       setUser(response.user);
       router.push('/dashboard');
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
-      const response = await api.post<AuthResponse>('/auth/register', data);
+      const response = await authApi.register(data);
       authStorage.setToken(response.token);
       setUser(response.user);
       router.push('/dashboard');

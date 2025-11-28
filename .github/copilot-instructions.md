@@ -34,8 +34,15 @@ powermap-frontend/
 ├── hooks/                      # Custom React hooks
 │   └── useAuth.ts              # Auth hook wrapper
 ├── lib/
-│   ├── api.ts                  # API client utilities
-│   └── auth.ts                 # JWT token management
+│   ├── api/
+│   │   ├── client.ts          # Base API client
+│   │   ├── auth.ts            # Auth endpoints
+│   │   ├── locations.ts       # Location endpoints
+│   │   ├── panels.ts          # Panel endpoints
+│   │   ├── qr-codes.ts        # QR code endpoints
+│   │   └── index.ts           # API exports
+│   ├── auth.ts                # JWT token management
+│   └── utils.ts               # shadcn/ui utilities
 ├── types/                      # TypeScript type definitions
 ├── public/                     # Static assets
 └── e2e/                        # Playwright tests
@@ -60,8 +67,25 @@ npx shadcn-ui@latest add button card input form label
 ## API Integration
 - **Base URL**: `http://localhost:3000/api`
 - **Authentication**: JWT tokens stored in localStorage/cookies
-- **Pattern**: Create API client in `lib/api.ts` with interceptors for auth headers
-- **Error handling**: Implement global error handling for 401/403 responses
+- **Structure**: Organized by feature in `lib/api/` directory
+- **Pattern**: 
+  - `client.ts` - Base API client with auth interceptors
+  - Feature-specific files (`auth.ts`, `locations.ts`, `panels.ts`, `qr-codes.ts`)
+  - Each file exports typed API functions
+  - Import from `@/lib/api` for centralized access
+- **Error handling**: Global 401/403 handling with auto-redirect to login
+
+### API Usage Examples
+```typescript
+// Import specific APIs
+import { authApi, locationApi, panelApi, qrCodeApi } from '@/lib/api';
+
+// Use typed API functions
+const user = await authApi.me();
+const locations = await locationApi.getAll();
+const location = await locationApi.getById('123');
+const panel = await panelApi.create({ name: 'Main Panel', ... });
+```
 
 ## Authentication Flow
 1. Login/Register sends credentials to `/api/auth/login` or `/api/auth/register`
@@ -98,15 +122,17 @@ npx shadcn-ui@latest add button card input form label
 - Use **App Router** (`app/` directory), not Pages Router
 - Server Components by default; add `"use client"` only when needed (forms, context, interactivity)
 - Protected routes: Check auth in layout.tsx or use middleware
-- API calls: Use `fetch` with try/catch, handle errors consistently
-- Place shadcn/ui components in `components/ui/`
-- Use TailwindCSS utility classes for styling
-- Follow Next.js file-based routing conventions
-
-## Navigation Structure
-- Implement global navigation in `app/layout.tsx` or `components/navigation/`
-- Show/hide nav items based on auth state from AuthContext
-- Include links to: Dashboard, Panel Builder, QR Code, Profile
+## When Working on This Project
+1. Always use TypeScript for type safety
+2. Client Components (`"use client"`) needed for: forms, context providers/consumers, onClick handlers
+3. Use shadcn/ui components before creating custom components
+4. Wrap protected routes with auth checks (redirect to /auth/login if not authenticated)
+5. Store JWT tokens securely (httpOnly cookies preferred over localStorage)
+6. Handle API errors gracefully with user-friendly messages
+7. Keep components small and composable
+8. Use meaningful names: `useAuth()` not `useA()`, `LocationCard` not `Card1`
+9. **API Development**: Add new endpoints in `lib/api/` - create feature files, export typed functions
+10. **Import APIs**: Always use `import { featureApi } from '@/lib/api'` for consistency
 - Mobile-responsive hamburger menu pattern
 
 ## Testing Strategy
