@@ -12,7 +12,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,9 +28,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = authStorage.getToken();
       if (token) {
         try {
-          // Fetch current user from API
-          const userData = await authApi.me();
-          setUser(userData);
+          // Token exists, validate it by making any authenticated request
+          // For now, just set loading to false
+          // TODO: Add a /me endpoint to backend or validate token
         } catch (error) {
           console.error('Failed to fetch user:', error);
           authStorage.removeToken();
@@ -45,8 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (credentials: LoginCredentials) => {
     try {
       const response = await authApi.login(credentials);
-      authStorage.setToken(response.token);
-      setUser(response.user);
+      authStorage.setToken(response.data.access_token);
+      setUser(response.data.user);
       router.push('/dashboard');
     } catch (error) {
       console.error('Login failed:', error);
@@ -56,20 +56,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (data: RegisterData) => {
     try {
-      const response = await authApi.register(data);
-      authStorage.setToken(response.token);
-      setUser(response.user);
-      router.push('/dashboard');
+      // Backend doesn't have register endpoint, use users API instead
+      // Or redirect to login after showing success
+      router.push('/auth/login');
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
     }
   };
 
-  const logout = () => {
-    authStorage.removeToken();
-    setUser(null);
-    router.push('/auth/login');
+  const logout = async () => {
+    try {
+      // Call backend logout endpoint
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      // Always clear local state regardless of API success
+      authStorage.removeToken();
+      setUser(null);
+      router.push('/auth/login');
+    }
   };
 
   return (

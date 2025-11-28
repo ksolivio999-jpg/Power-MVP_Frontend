@@ -40,7 +40,11 @@ export function Navigation() {
                 </Link>
               ))}
               <span className="text-sm text-muted-foreground">{user?.name}</span>
-              <Button variant="outline" size="sm" onClick={logout}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={async () => await logout()}
+              >
                 Logout
               </Button>
             </>
